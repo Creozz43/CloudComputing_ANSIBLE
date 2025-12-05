@@ -11,14 +11,3 @@
         tags:
           testing: testing
           delete: never
-
-    - name: Delete resource group
-      azure.azcollection.azure_rm_resourcegroup:
-        name: myResourceGroup
-        state: absent
-
-    - name: Delete resource group including contained resources
-      azure.azcollection.azure_rm_resourcegroup:
-        name: myResourceGroup
-        force_delete_nonempty: true
-        state: absent

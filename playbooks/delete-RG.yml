@@ -1,0 +1,12 @@
+---
+- name: Manage Azure resource group delete
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+  
+    - name: Delete resource group including contained resources
+      azure.azcollection.azure_rm_resourcegroup:
+        name: myResourceGroup
+        force_delete_nonempty: true
+        state: absent
