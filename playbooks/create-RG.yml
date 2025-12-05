@@ -1,0 +1,24 @@
+
+- name: Create Azure Resource Group
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    resource_group: myResourceGroup
+    location: eastus
+    tags:
+      project: CloudComputing
+      owner: ansible
+
+  tasks:
+    - name: Create or update resource group
+      azure.azcollection.azure_rm_resourcegroup:
+        name: "{{ resource_group }}"
+        location: "{{ location }}"
+        tags: "{{ tags }}"
+      register: rg
+
+    - name: Show resource group creation result
+      ansible.builtin.debug:
+        var: rg
