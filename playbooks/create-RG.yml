@@ -1,24 +1,24 @@
-
-- name: Create Azure Resource Group
+---
+- name: Manage Azure resource group
   hosts: localhost
   connection: local
-  gather_facts: no
-
-  vars:
-    resource_group: myResourceGroup
-    location: eastus
-    tags:
-      project: CloudComputing
-      owner: ansible
-
+  gather_facts: false
   tasks:
-    - name: Create or update resource group
+    - name: Create resource group
       azure.azcollection.azure_rm_resourcegroup:
-        name: "{{ resource_group }}"
-        location: "{{ location }}"
-        tags: "{{ tags }}"
-      register: rg
+        name: myResourceGroup
+        location: westus
+        tags:
+          testing: testing
+          delete: never
 
-    - name: Show resource group creation result
-      ansible.builtin.debug:
-        var: rg
+    - name: Delete resource group
+      azure.azcollection.azure_rm_resourcegroup:
+        name: myResourceGroup
+        state: absent
+
+    - name: Delete resource group including contained resources
+      azure.azcollection.azure_rm_resourcegroup:
+        name: myResourceGroup
+        force_delete_nonempty: true
+        state: absent
