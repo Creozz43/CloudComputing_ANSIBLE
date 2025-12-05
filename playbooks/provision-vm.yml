@@ -1,0 +1,96 @@
+---
+- name: Provision Azure VM matching MachineCloudVF
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    location: francecentral
+    rg_name: MachineCloudRG
+    vnet_name: vnet-francecentral-1
+    subnet_name: snet-francecentral-1
+    address_space: 172.17.0.0/16
+    subnet_prefix: 172.17.0.0/24
+    nsg_name: MachineCloudNSG
+    pip_name: machinecloudvf-pip
+    nic_name: machinecloudvf50
+    vm_name: MachineCloudVF
+    admin_username: azureuser
+    admin_password: "ChangeMe!234"
+  tasks:
+    - name: Ensure resource group
+      azure.azcollection.azure_rm_resourcegroup:
+        name: "{{ rg_name }}"
+        location: "{{ location }}"
+
+    - name: Ensure virtual network
+      azure.azcollection.azure_rm_virtualnetwork:
+        resource_group: "{{ rg_name }}"
+        name: "{{ vnet_name }}"
+        address_prefixes:
+          - "{{ address_space }}"
+
+    - name: Ensure subnet
+      azure.azcollection.azure_rm_subnet:
+        resource_group: "{{ rg_name }}"
+        name: "{{ subnet_name }}"
+        virtual_network: "{{ vnet_name }}"
+        address_prefix: "{{ subnet_prefix }}"
+
+    - name: Ensure NSG allowing SSH
+      azure.azcollection.azure_rm_securitygroup:
+        resource_group: "{{ rg_name }}"
+        name: "{{ nsg_name }}"
+        rules:
+          - name: AllowSSHInbound
+            priority: 1000
+            direction: Inbound
+            access: Allow
+            protocol: Tcp
+            source_port_range: "*"
+            destination_port_range: "22"
+            source_address_prefix: "*"
+            destination_address_prefix: "*"
+
+    - name: Ensure static public IP
+      azure.azcollection.azure_rm_publicipaddress:
+        resource_group: "{{ rg_name }}"
+        name: "{{ pip_name }}"
+        location: "{{ location }}"
+        allocation_method: Static
+        sku: Standard
+
+    - name: Ensure NIC
+      azure.azcollection.azure_rm_networkinterface:
+        resource_group: "{{ rg_name }}"
+        name: "{{ nic_name }}"
+        location: "{{ location }}"
+        virtual_network: "{{ vnet_name }}"
+        subnet: "{{ subnet_name }}"
+        security_group: "{{ nsg_name }}"
+        ip_configurations:
+          - name: ipconfig1
+            primary: true
+            public_ip_address_name: "{{ pip_name }}"
+
+    - name: Ensure VM
+      azure.azcollection.azure_rm_virtualmachine:
+        resource_group: "{{ rg_name }}"
+        name: "{{ vm_name }}"
+        location: "{{ location }}"
+        vm_size: Standard_B2ats_v2
+        network_interfaces: "{{ nic_name }}"
+        admin_username: "{{ admin_username }}"
+        admin_password: "{{ admin_password }}"
+        security_type: TrustedLaunch
+        enable_secure_boot: true
+        enable_vtpm: true
+        os_disk:
+          name: "{{ vm_name }}_OsDisk"
+          caching: ReadWrite
+          storage_account_type: StandardSSD_LRS
+        image:
+          publisher: Canonical
+          offer: 0001-com-ubuntu-server-noble
+          sku: 24_04-lts
+          version: latest
+        state: present
