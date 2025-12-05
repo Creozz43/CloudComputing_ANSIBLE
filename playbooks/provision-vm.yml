@@ -81,13 +81,9 @@
         network_interfaces: "{{ nic_name }}"
         admin_username: "{{ admin_username }}"
         admin_password: "{{ admin_password }}"
-        security_type: TrustedLaunch
-        enable_secure_boot: true
-        enable_vtpm: true
-        os_disk:
-          name: "{{ vm_name }}_OsDisk"
-          caching: ReadWrite
-          storage_account_type: StandardSSD_LRS
+        os_disk_caching: ReadWrite
+        os_disk_name: "{{ vm_name }}_OsDisk"
+        managed_disk_type: StandardSSD_LRS
         image:
           publisher: Canonical
           offer: 0001-com-ubuntu-server-noble
