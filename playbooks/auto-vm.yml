@@ -1,0 +1,118 @@
+---
+- name: Configure Docker stack on provisioned VM
+  hosts: provisioned_vm
+  become: true
+  gather_facts: true
+  vars:
+    docker_network_name: mon-reseau
+  tasks:
+    - name: Install prerequisite packages
+      ansible.builtin.apt:
+        update_cache: true
+        pkg:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - python3-docker
+
+    - name: Ensure Docker keyring directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Install Docker GPG key
+      ansible.builtin.shell: |
+        set -euo pipefail
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+          gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Fix Docker key permissions
+      ansible.builtin.file:
+        path: /etc/apt/keyrings/docker.gpg
+        mode: '0644'
+
+    - name: Add Docker apt repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['lsb']['codename'] }} stable"
+        filename: docker
+        state: present
+
+    - name: Install Docker engine components
+      ansible.builtin.apt:
+        update_cache: true
+        pkg:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+
+    - name: Enable and start Docker
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Ensure 2G swapfile exists
+      ansible.builtin.shell: |
+        set -euo pipefail
+        fallocate -l 2G /swapfile
+        chmod 600 /swapfile
+        mkswap /swapfile
+        swapon /swapfile
+      args:
+        creates: /swapfile
+
+    - name: Ensure Docker network
+      community.docker.docker_network:
+        name: "{{ docker_network_name }}"
+
+    - name: Run PostgreSQL container
+      community.docker.docker_container:
+        name: ma-bdd
+        image: postgres:latest
+        restart_policy: unless-stopped
+        networks:
+          - name: "{{ docker_network_name }}"
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: richmillionaire
+
+    - name: Run backend container
+      community.docker.docker_container:
+        name: mon-back
+        image: kikipaul/richmillionaire-backend:latest
+        restart_policy: unless-stopped
+        published_ports:
+          - "8080:8080"
+        networks:
+          - name: "{{ docker_network_name }}"
+
+    - name: Run frontend container
+      community.docker.docker_container:
+        name: mon-front
+        image: kikipaul/richmillionaire-frontend:latest
+        restart_policy: unless-stopped
+        published_ports:
+          - "80:4200"
+        command:
+          - npm
+          - start
+          - --
+          - --host
+          - 0.0.0.0
+        networks:
+          - name: "{{ docker_network_name }}"
+
+    - name: Show running containers
+      ansible.builtin.command: docker ps
+      register: docker_ps
+
+    - name: Display docker ps output
+      ansible.builtin.debug:
+        var: docker_ps.stdout

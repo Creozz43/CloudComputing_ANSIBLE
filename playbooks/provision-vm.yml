@@ -14,6 +14,7 @@
     pip_name: machinecloudvf-pip
     nic_name: machinecloudvf50
     vm_name: MachineCloudVF
+    vm_size: Standard_B2ats_v2
     admin_username: azureuser
     admin_password: "ChangeMe!234"
   tasks:
@@ -77,7 +78,7 @@
         resource_group: "{{ rg_name }}"
         name: "{{ vm_name }}"
         location: "{{ location }}"
-        vm_size: Standard_B2ats_v2
+        vm_size: "{{ vm_size }}"
         network_interfaces: "{{ nic_name }}"
         admin_username: "{{ admin_username }}"
         admin_password: "{{ admin_password }}"
@@ -90,3 +91,25 @@
           sku: server-gen1
           version: latest
         state: present
+
+    - name: Get public IP info
+      azure.azcollection.azure_rm_publicipaddress_info:
+        resource_group: "{{ rg_name }}"
+        name: "{{ pip_name }}"
+      register: pip_info
+
+    - name: Add VM to in-memory inventory
+      ansible.builtin.add_host:
+        name: provisioned_vm
+        ansible_host: "{{ pip_info.publicipaddresses[0].ip_address }}"
+        ansible_user: "{{ admin_username }}"
+        ansible_password: "{{ admin_password }}"
+        ansible_connection: ssh
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+
+    - name: Wait for SSH
+      ansible.builtin.wait_for:
+        host: "{{ pip_info.publicipaddresses[0].ip_address }}"
+        port: 22
+        delay: 15
+        timeout: 300
