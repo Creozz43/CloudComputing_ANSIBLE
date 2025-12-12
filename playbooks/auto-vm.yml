@@ -42,6 +42,7 @@
         swapon /swapfile
       args:
         creates: /swapfile
+        executable: /bin/bash
 
     - name: Ensure Docker network
       community.docker.docker_network:
