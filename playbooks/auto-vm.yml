@@ -1,4 +1,29 @@
 ---
+- name: Resolve VM public IP
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    rg_name: MachineCloudRG
+    pip_name: machinecloudvf-pip
+    admin_username: azureuser
+    admin_password: "ChangeMe!234"
+  tasks:
+    - name: Get public IP info
+      azure.azcollection.azure_rm_publicipaddress_info:
+        resource_group: "{{ rg_name }}"
+        name: "{{ pip_name }}"
+      register: pip_info
+
+    - name: Add VM to in-memory inventory
+      ansible.builtin.add_host:
+        name: provisioned_vm
+        ansible_host: "{{ pip_info.publicipaddresses[0].ip_address }}"
+        ansible_user: "{{ admin_username }}"
+        ansible_password: "{{ admin_password }}"
+        ansible_connection: ssh
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+
 - name: Configure Docker stack on provisioned VM
   hosts: provisioned_vm
   collections:
