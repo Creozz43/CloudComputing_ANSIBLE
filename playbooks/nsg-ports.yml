@@ -1,0 +1,43 @@
+---
+- name: Open API and Front ports on MachineCloudNSG
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    location: francecentral
+    rg_name: MachineCloudRG
+    nsg_name: MachineCloudNSG
+  tasks:
+    - name: Ensure NSG rules for API (8080) and Front (80)
+      azure.azcollection.azure_rm_securitygroup:
+        resource_group: "{{ rg_name }}"
+        name: "{{ nsg_name }}"
+        location: "{{ location }}"
+        rules:
+          - name: AllowSSHInbound
+            priority: 1000
+            direction: Inbound
+            access: Allow
+            protocol: Tcp
+            source_port_range: "*"
+            destination_port_range: "22"
+            source_address_prefix: "*"
+            destination_address_prefix: "*"
+          - name: API
+            priority: 1020
+            direction: Inbound
+            access: Allow
+            protocol: "*"
+            source_port_range: "*"
+            destination_port_range: "8080"
+            source_address_prefix: "*"
+            destination_address_prefix: "*"
+          - name: front
+            priority: 1030
+            direction: Inbound
+            access: Allow
+            protocol: "*"
+            source_port_range: "*"
+            destination_port_range: "80"
+            source_address_prefix: "*"
+            destination_address_prefix: "*"
