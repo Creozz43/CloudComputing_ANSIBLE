@@ -1,6 +1,8 @@
 ---
 - name: Configure Docker stack on provisioned VM
   hosts: provisioned_vm
+  collections:
+    - community.docker
   become: true
   gather_facts: true
   vars:
