@@ -1,29 +1,4 @@
 ---
-- name: Register target VM from provided vars
-  hosts: localhost
-  connection: local
-  gather_facts: false
-  vars:
-    target_ip: "{{ target_ip | default(omit) }}"
-    admin_username: "{{ admin_username | default('azureuser') }}"
-    admin_password: "{{ admin_password | default(omit) }}"
-  tasks:
-    - name: Ensure target_ip and admin_password are provided
-      ansible.builtin.assert:
-        that:
-          - target_ip is defined
-          - admin_password is defined
-        fail_msg: "Pass target_ip and admin_password via extra vars."
-
-    - name: Add target VM to runtime inventory
-      ansible.builtin.add_host:
-        name: provisioned_vm
-        ansible_host: "{{ target_ip }}"
-        ansible_user: "{{ admin_username }}"
-        ansible_password: "{{ admin_password }}"
-        ansible_connection: ssh
-        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
-
 - name: Configure Docker stack on provisioned VM
   hosts: provisioned_vm
   collections:
