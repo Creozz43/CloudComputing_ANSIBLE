@@ -24,7 +24,7 @@
         update_cache: true
         pkg:
           - docker.io
-          - docker-compose-plugin
+          - docker-compose
           - containerd
 
     - name: Enable and start Docker
