@@ -1,5 +1,5 @@
 ---
-- name: Resolve VM public IP
+- name: Resolve VM endpoint
   hosts: localhost
   connection: local
   gather_facts: false
