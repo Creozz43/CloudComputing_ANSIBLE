@@ -1,3 +1,0 @@
----
-- import_playbook: provision-vm.yml
-- import_playbook: auto-vm.yml

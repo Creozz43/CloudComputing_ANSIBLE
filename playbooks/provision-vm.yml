@@ -13,10 +13,12 @@
     nsg_name: MachineCloudNSG
     pip_name: machinecloudvf-pip
     nic_name: machinecloudvf50
-    vm_name: MachineCloudVF
+    unique_suffix: "{{ lookup('pipe', 'date +%s') }}"
+    vm_name: "MachineCloudVF-{{ unique_suffix }}"
     vm_size: Standard_B2ats_v2
     admin_username: azureuser
     admin_password: "ChangeMe!234"
+    os_disk_name: "{{ vm_name }}_OsDisk"
   tasks:
     - name: Ensure resource group
       azure.azcollection.azure_rm_resourcegroup:
