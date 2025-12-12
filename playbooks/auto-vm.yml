@@ -23,11 +23,9 @@
       ansible.builtin.apt:
         update_cache: true
         pkg:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
+          - docker.io
           - docker-compose-plugin
+          - containerd
 
     - name: Enable and start Docker
       ansible.builtin.systemd:
